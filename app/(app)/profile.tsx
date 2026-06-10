@@ -79,6 +79,14 @@ function PhotoPickerSheet({ hasPhoto, onUpload, onRemove, onDismiss, insetBottom
   );
 }
 
+function getInitials(firstName: string, lastName: string): string {
+  return [firstName[0] ?? '', lastName[0] ?? ''].join('').toUpperCase() || '?';
+}
+
+function getDisplayName(firstName: string, lastName: string): string {
+  return [firstName, lastName].filter(Boolean).join(' ') || 'Your Name';
+}
+
 export default function ProfileScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -104,9 +112,9 @@ export default function ProfileScreen() {
     initialized.current = true;
     const fn = (user.user_metadata?.first_name as string) ?? '';
     const ln = (user.user_metadata?.last_name as string) ?? '';
-    const dn = [fn, ln].filter(Boolean).join(' ') || 'Your Name';
+    const dn = getDisplayName(fn, ln);
     const av = (user.user_metadata?.avatar_url as string) ?? undefined;
-    const ini = [fn[0] ?? '', ln[0] ?? ''].join('').toUpperCase() || '?';
+    const ini = getInitials(fn, ln);
     setFirstName(fn);
     setLastName(ln);
     setDisplayName(dn);
@@ -114,7 +122,7 @@ export default function ProfileScreen() {
     initFromUser({ displayName: dn, avatarUrl: av, initials: ini });
   }, [user]);
 
-  const initials = [firstName[0] ?? '', lastName[0] ?? ''].join('').toUpperCase() || '?';
+  const initials = getInitials(firstName, lastName);
   const email = user?.email ?? '';
 
   async function handleUploadPhoto() {
@@ -194,8 +202,8 @@ export default function ProfileScreen() {
         avatar_url: avatarUri,
       });
       await supabase.auth.refreshSession();
-      const newDisplayName = [firstName.trim(), lastName.trim()].filter(Boolean).join(' ') || 'Your Name';
-      const newInitials = [firstName.trim()[0] ?? '', lastName.trim()[0] ?? ''].join('').toUpperCase() || '?';
+      const newDisplayName = getDisplayName(firstName.trim(), lastName.trim());
+      const newInitials = getInitials(firstName.trim(), lastName.trim());
       setDisplayName(newDisplayName);
       setProfile({ displayName: newDisplayName, initials: newInitials });
       setSaved(true);
