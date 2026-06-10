@@ -38,6 +38,7 @@ export default function ResultScreen() {
   const [sending, setSending] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
   const listRef = useRef<FlatList>(null);
+  const seenMessageIds = useRef(new Set<string>());
 
   // Scroll position tracking
   const layoutHeightRef = useRef(0);
@@ -200,7 +201,11 @@ export default function ResultScreen() {
           ref={listRef}
           data={messages}
           keyExtractor={item => item.id}
-          renderItem={({ item, index }) => <MessageBubble message={item} index={index} />}
+          renderItem={({ item, index }) => {
+            const animate = !seenMessageIds.current.has(item.id);
+            seenMessageIds.current.add(item.id);
+            return <MessageBubble message={item} index={index} animate={animate} />;
+          }}
           ListHeaderComponent={<SummaryCard />}
           ListFooterComponent={sending ? <TypingIndicator /> : null}
           contentContainerStyle={{ paddingBottom: spacing.lg }}
