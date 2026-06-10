@@ -14,6 +14,7 @@ import { AnimatedButton } from '../../src/components/AnimatedButton';
 import { useTheme, spacing, typography, radius, shadows } from '../../src/theme';
 import { updateProfile } from '../../src/services/api';
 import { supabase } from '../../src/services/supabase';
+import { useProfileStore } from '../../src/store/useProfileStore';
 
 interface PhotoSheetProps {
   hasPhoto: boolean;
@@ -82,6 +83,8 @@ export default function ProfileScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { user, signOut } = useAuth();
+  const initFromUser = useProfileStore(state => state.initFromUser);
+  const setProfile = useProfileStore(state => state.setProfile);
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -101,10 +104,14 @@ export default function ProfileScreen() {
     initialized.current = true;
     const fn = (user.user_metadata?.first_name as string) ?? '';
     const ln = (user.user_metadata?.last_name as string) ?? '';
+    const dn = [fn, ln].filter(Boolean).join(' ') || 'Your Name';
+    const av = (user.user_metadata?.avatar_url as string) ?? undefined;
+    const ini = [fn[0] ?? '', ln[0] ?? ''].join('').toUpperCase() || '?';
     setFirstName(fn);
     setLastName(ln);
-    setDisplayName([fn, ln].filter(Boolean).join(' ') || 'Your Name');
-    setAvatarUri((user.user_metadata?.avatar_url as string) ?? undefined);
+    setDisplayName(dn);
+    setAvatarUri(av);
+    initFromUser({ displayName: dn, avatarUrl: av, initials: ini });
   }, [user]);
 
   const initials = [firstName[0] ?? '', lastName[0] ?? ''].join('').toUpperCase() || '?';
@@ -147,6 +154,7 @@ export default function ProfileScreen() {
       const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`;
       await updateProfile({ first_name: firstName, last_name: lastName, avatar_url: publicUrl });
       setAvatarUri(publicUrl);
+      setProfile({ avatarUrl: publicUrl });
       await supabase.auth.refreshSession();
     } catch (err: any) {
       Alert.alert('Upload failed', err.message ?? 'Could not upload avatar');
@@ -164,6 +172,7 @@ export default function ProfileScreen() {
       await supabase.storage.from('avatars').remove([filePath]);
       await updateProfile({ first_name: firstName, last_name: lastName, avatar_url: undefined });
       setAvatarUri(undefined);
+      setProfile({ avatarUrl: undefined });
       await supabase.auth.refreshSession();
     } catch (err: any) {
       Alert.alert('Error', err.message ?? 'Could not remove photo');
@@ -185,7 +194,10 @@ export default function ProfileScreen() {
         avatar_url: avatarUri,
       });
       await supabase.auth.refreshSession();
-      setDisplayName([firstName.trim(), lastName.trim()].filter(Boolean).join(' ') || 'Your Name');
+      const newDisplayName = [firstName.trim(), lastName.trim()].filter(Boolean).join(' ') || 'Your Name';
+      const newInitials = [firstName.trim()[0] ?? '', lastName.trim()[0] ?? ''].join('').toUpperCase() || '?';
+      setDisplayName(newDisplayName);
+      setProfile({ displayName: newDisplayName, initials: newInitials });
       setSaved(true);
       if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
       savedTimerRef.current = setTimeout(() => setSaved(false), 2000);
