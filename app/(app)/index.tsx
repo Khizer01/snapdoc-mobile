@@ -34,8 +34,8 @@ export default function HomeScreen() {
     setPullRefreshing(false);
   }, [refresh]);
 
-  const storeInitials = useProfileStore(state => state.initials);
-  const storeAvatarUrl = useProfileStore(state => state.avatarUrl);
+  const initials = useProfileStore(state => state.initials);
+  const avatarUrl = useProfileStore(state => state.avatarUrl);
   const initFromUser = useProfileStore(state => state.initFromUser);
 
   useEffect(() => {
@@ -47,9 +47,6 @@ export default function HomeScreen() {
     const ini = [fn[0] ?? '', ln[0] ?? ''].join('').toUpperCase() || '?';
     initFromUser({ displayName: dn, avatarUrl: av, initials: ini });
   }, [user, initFromUser]);
-
-  const initials = storeInitials;
-  const avatarUrl = storeAvatarUrl;
 
   function promptDelete(scanId: string) {
     setSelectedScan(null);
