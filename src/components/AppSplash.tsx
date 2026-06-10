@@ -17,7 +17,6 @@ const DOC_Y = (H - DOC_H) / 2;
 
 export function AppSplash() {
   const scanY = useSharedValue(DOC_Y);
-  const glowScale = useSharedValue(1);
   const d1 = useSharedValue(0.25);
   const d2 = useSharedValue(0.25);
   const d3 = useSharedValue(0.25);
@@ -28,15 +27,6 @@ export function AppSplash() {
         withTiming(DOC_Y + DOC_H - 3, { duration: 2400, easing: Easing.inOut(Easing.cubic) }),
         withDelay(500, withTiming(DOC_Y, { duration: 2400, easing: Easing.inOut(Easing.cubic) })),
         withDelay(500, withTiming(DOC_Y, { duration: 0 })),
-      ),
-      -1,
-      false,
-    );
-
-    glowScale.value = withRepeat(
-      withSequence(
-        withTiming(1.15, { duration: 2000, easing: Easing.inOut(Easing.sin) }),
-        withTiming(1, { duration: 2000, easing: Easing.inOut(Easing.sin) }),
       ),
       -1,
       false,
@@ -64,7 +54,6 @@ export function AppSplash() {
   }, []);
 
   const scanStyle = useAnimatedStyle(() => ({ top: scanY.value }));
-  const glowStyle = useAnimatedStyle(() => ({ transform: [{ scale: glowScale.value }] }));
   const dot1Style = useAnimatedStyle(() => ({ opacity: d1.value }));
   const dot2Style = useAnimatedStyle(() => ({ opacity: d2.value }));
   const dot3Style = useAnimatedStyle(() => ({ opacity: d3.value }));
@@ -72,21 +61,11 @@ export function AppSplash() {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={['#0a0a14', '#0f0f1e', '#0a0a14']}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 1 }}
+        colors={['#4A5BE8', '#7C3AED']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFillObject}
       />
-
-      {/* Radial glow behind logo */}
-      <Animated.View style={[styles.glowWrap, glowStyle]}>
-        <LinearGradient
-          colors={['rgba(91,106,240,0.22)', 'rgba(124,58,237,0.12)', 'transparent']}
-          start={{ x: 0.5, y: 0.5 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.glow}
-        />
-      </Animated.View>
 
       <Animated.View entering={FadeIn.duration(600)} style={styles.logoWrap}>
         <View style={{ width: SIZE, height: H }}>
@@ -115,22 +94,9 @@ export function AppSplash() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0a0a14',
+    backgroundColor: '#4A5BE8',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  glowWrap: {
-    position: 'absolute',
-    width: 380,
-    height: 380,
-    alignSelf: 'center',
-    top: '50%',
-    marginTop: -220,
-  },
-  glow: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 190,
   },
   logoWrap: {
     marginBottom: 32,
@@ -173,6 +139,6 @@ const styles = StyleSheet.create({
     width: 7,
     height: 7,
     borderRadius: 3.5,
-    backgroundColor: '#5B6AF0',
+    backgroundColor: 'rgba(255,255,255,0.7)',
   },
 });
