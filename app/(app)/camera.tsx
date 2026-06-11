@@ -65,6 +65,7 @@ export default function CameraScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [processing, setProcessing] = useState(false);
   const [previewUri, setPreviewUri] = useState<string | null>(null);
+  const [previewSource, setPreviewSource] = useState<'camera' | 'gallery' | null>(null);
   const [showCrop, setShowCrop] = useState(false);
 
   if (!permission) return <View style={{ flex: 1, backgroundColor: colors.background }} />;
@@ -108,6 +109,8 @@ export default function CameraScreen() {
     } catch (err: any) {
       Alert.alert('Error', err.message ?? 'Failed to process document');
       setProcessing(false);
+      // previewUri/previewSource intentionally retained so the user returns to the
+      // preview overlay (Retake/Crop/Analyze) to retry instead of losing the image.
     }
   }
 
@@ -116,6 +119,7 @@ export default function CameraScreen() {
     const photo = await cameraRef.current.takePictureAsync({ quality: 0.8 });
     if (!photo) throw new Error('Camera capture failed');
     setPreviewUri(photo.uri);
+    setPreviewSource('camera');
   }
 
   async function pickFromGallery() {
@@ -132,6 +136,7 @@ export default function CameraScreen() {
     });
     if (result.canceled || !result.assets[0]) return;
     setPreviewUri(result.assets[0].uri);
+    setPreviewSource('gallery');
   }
 
   return (
@@ -169,11 +174,19 @@ export default function CameraScreen() {
           <Image source={{ uri: previewUri }} style={styles.previewImage} resizeMode="contain" />
           <View style={[styles.previewActions, { paddingBottom: insets.bottom + spacing.lg }]}>
             <AnimatedButton
-              onPress={() => setPreviewUri(null)}
+              onPress={() => {
+                setPreviewUri(null);
+                setPreviewSource(null);
+                if (previewSource === 'gallery') {
+                  pickFromGallery();
+                }
+              }}
               style={[styles.previewBtn, { backgroundColor: 'rgba(0,0,0,0.6)' }]}
             >
-              <Ionicons name="refresh-outline" size={18} color="#fff" />
-              <Text style={[typography.label, { color: '#fff', marginLeft: 6 }]}>Retake</Text>
+              <Ionicons name={previewSource === 'gallery' ? 'images-outline' : 'refresh-outline'} size={18} color="#fff" />
+              <Text style={[typography.label, { color: '#fff', marginLeft: 6 }]}>
+                {previewSource === 'gallery' ? 'Choose Different' : 'Retake'}
+              </Text>
             </AnimatedButton>
             <AnimatedButton
               onPress={() => setShowCrop(true)}
