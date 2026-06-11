@@ -181,7 +181,8 @@ export default function ProfileScreen() {
     setUploadingAvatar(true);
     try {
       const filePath = `${user.id}/avatar.jpg`;
-      await supabase.storage.from('avatars').remove([filePath]);
+      const { error: removeError } = await supabase.storage.from('avatars').remove([filePath]);
+      if (removeError) throw removeError;
       await updateProfile({ first_name: firstName, last_name: lastName, avatar_url: undefined });
       setAvatarUri(undefined);
       setProfile({ avatarUrl: undefined });
