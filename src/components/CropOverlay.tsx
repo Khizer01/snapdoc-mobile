@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Image, Modal, Text, LayoutChangeEvent } from 'react-native';
+import { View, StyleSheet, Image, Modal, Text, LayoutChangeEvent, Alert } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useSharedValue, useAnimatedStyle } from 'react-native-reanimated';
 import * as ImageManipulator from 'expo-image-manipulator';
@@ -33,8 +33,17 @@ export function CropOverlay({ uri, onCancel, onConfirm }: CropOverlayProps) {
   const startW = useSharedValue(0);
   const startH = useSharedValue(0);
 
+  const boundsX = useSharedValue(0);
+  const boundsY = useSharedValue(0);
+  const boundsWidth = useSharedValue(0);
+  const boundsHeight = useSharedValue(0);
+
   useEffect(() => {
-    Image.getSize(uri, (width, height) => setNaturalSize({ width, height }), () => {});
+    let mounted = true;
+    Image.getSize(uri, (width, height) => {
+      if (mounted) setNaturalSize({ width, height });
+    }, () => {});
+    return () => { mounted = false; };
   }, [uri]);
 
   function onContainerLayout(e: LayoutChangeEvent) {
@@ -59,6 +68,10 @@ export function CropOverlay({ uri, onCancel, onConfirm }: CropOverlayProps) {
     const offsetX = (containerSize.width - displayWidth) / 2;
     const offsetY = (containerSize.height - displayHeight) / 2;
     setBounds({ width: displayWidth, height: displayHeight, offsetX, offsetY });
+    boundsX.value = offsetX;
+    boundsY.value = offsetY;
+    boundsWidth.value = displayWidth;
+    boundsHeight.value = displayHeight;
 
     const w = displayWidth * 0.8;
     const h = displayHeight * 0.8;
@@ -70,15 +83,16 @@ export function CropOverlay({ uri, onCancel, onConfirm }: CropOverlayProps) {
 
   const moveGesture = Gesture.Pan()
     .onStart(() => {
+      'worklet';
       startX.value = cropX.value;
       startY.value = cropY.value;
     })
     .onUpdate((e) => {
       'worklet';
-      const minX = bounds.offsetX;
-      const minY = bounds.offsetY;
-      const maxX = bounds.offsetX + bounds.width - cropW.value;
-      const maxY = bounds.offsetY + bounds.height - cropH.value;
+      const minX = boundsX.value;
+      const minY = boundsY.value;
+      const maxX = boundsX.value + boundsWidth.value - cropW.value;
+      const maxY = boundsY.value + boundsHeight.value - cropH.value;
       cropX.value = Math.min(Math.max(startX.value + e.translationX, minX), Math.max(maxX, minX));
       cropY.value = Math.min(Math.max(startY.value + e.translationY, minY), Math.max(maxY, minY));
     });
@@ -86,6 +100,7 @@ export function CropOverlay({ uri, onCancel, onConfirm }: CropOverlayProps) {
   function makeCornerGesture(corner: 'tl' | 'tr' | 'bl' | 'br') {
     return Gesture.Pan()
       .onStart(() => {
+        'worklet';
         startX.value = cropX.value;
         startY.value = cropY.value;
         startW.value = cropW.value;
@@ -93,10 +108,10 @@ export function CropOverlay({ uri, onCancel, onConfirm }: CropOverlayProps) {
       })
       .onUpdate((e) => {
         'worklet';
-        const minX = bounds.offsetX;
-        const minY = bounds.offsetY;
-        const maxRight = bounds.offsetX + bounds.width;
-        const maxBottom = bounds.offsetY + bounds.height;
+        const minX = boundsX.value;
+        const minY = boundsY.value;
+        const maxRight = boundsX.value + boundsWidth.value;
+        const maxBottom = boundsY.value + boundsHeight.value;
 
         if (corner === 'tl') {
           const newX = Math.min(Math.max(startX.value + e.translationX, minX), startX.value + startW.value - MIN_CROP_SIZE);
@@ -158,6 +173,7 @@ export function CropOverlay({ uri, onCancel, onConfirm }: CropOverlayProps) {
       );
       onConfirm(result.uri);
     } catch {
+      Alert.alert('Error', 'Could not crop image. Please try again.');
       onCancel();
     } finally {
       setProcessing(false);
