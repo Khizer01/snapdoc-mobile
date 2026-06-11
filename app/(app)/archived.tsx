@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, RefreshControl } from 'react-native';
+import { View, Text, FlatList, StyleSheet, RefreshControl, ActivityIndicator } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -78,6 +78,11 @@ export default function ArchivedScreen() {
         <View style={{ width: 38 }} />
       </Animated.View>
 
+      {loading && scans.length === 0 ? (
+        <View style={styles.loadingState}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      ) : (
       <FlatList
         data={scans}
         keyExtractor={item => item.id}
@@ -109,6 +114,7 @@ export default function ArchivedScreen() {
           ) : null
         }
       />
+      )}
 
       {!!selectedScan && (
         <ScanActionsSheet
@@ -137,4 +143,5 @@ const styles = StyleSheet.create({
   },
   backBtn: { padding: spacing.xs },
   emptyState: { alignItems: 'center', paddingTop: 80 },
+  loadingState: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });
