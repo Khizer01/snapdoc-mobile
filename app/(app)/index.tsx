@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, RefreshControl, Pressable, Image } from 'react-native';
+import { View, Text, FlatList, StyleSheet, RefreshControl, Pressable, Image, ActivityIndicator } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -132,7 +132,11 @@ export default function HomeScreen() {
         contentContainerStyle={{ padding: spacing.md, paddingBottom: insets.bottom + 100 }}
         refreshControl={<RefreshControl refreshing={pullRefreshing} onRefresh={onPullRefresh} tintColor={colors.primary} />}
         ListEmptyComponent={
-          !loading ? (
+          loading ? (
+            <View style={styles.emptyState}>
+              <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+          ) : (
             <Animated.View entering={FadeInDown.duration(400)} style={styles.emptyState}>
               <Logo size={64} color={colors.textSecondary} />
               <Text style={[typography.subheading, { color: colors.textPrimary, marginTop: spacing.md, textAlign: 'center' }]}>
@@ -142,7 +146,7 @@ export default function HomeScreen() {
                 Tap Scan below to scan your first document
               </Text>
             </Animated.View>
-          ) : null
+          )
         }
       />
 
