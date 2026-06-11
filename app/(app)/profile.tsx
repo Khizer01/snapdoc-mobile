@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/hooks/useAuth';
 import { AnimatedButton } from '../../src/components/AnimatedButton';
+import { AvatarViewerModal } from '../../src/components/AvatarViewerModal';
 import { useTheme, spacing, typography, radius, shadows } from '../../src/theme';
 import { updateProfile } from '../../src/services/api';
 import { supabase } from '../../src/services/supabase';
@@ -100,6 +101,7 @@ export default function ProfileScreen() {
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [showPhotoSheet, setShowPhotoSheet] = useState(false);
+  const [showAvatarViewer, setShowAvatarViewer] = useState(false);
   const [firstNameFocused, setFirstNameFocused] = useState(false);
   const [lastNameFocused, setLastNameFocused] = useState(false);
   const [displayName, setDisplayName] = useState('Your Name');
@@ -227,6 +229,7 @@ export default function ProfileScreen() {
         <Animated.View entering={FadeInDown.duration(350)} style={styles.avatarSection}>
           <Pressable
             onPress={() => !uploadingAvatar && !saving && setShowPhotoSheet(true)}
+            onLongPress={() => avatarUri && setShowAvatarViewer(true)}
             style={[styles.avatarRing, { borderColor: colors.primary + '40' }]}
           >
             <View style={[styles.avatarCircle, { backgroundColor: colors.primary + '18' }]}>
@@ -326,6 +329,10 @@ export default function ProfileScreen() {
           insetBottom={insets.bottom}
           colors={colors}
         />
+      )}
+
+      {showAvatarViewer && avatarUri && (
+        <AvatarViewerModal uri={avatarUri} onClose={() => setShowAvatarViewer(false)} />
       )}
     </View>
   );
