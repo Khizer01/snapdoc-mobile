@@ -4,7 +4,7 @@ import {
   KeyboardAvoidingView, Platform, Alert,
 } from 'react-native';
 import Animated, {
-  FadeIn, FadeInDown, useSharedValue, useAnimatedStyle, withTiming, withSpring,
+  useSharedValue, useAnimatedStyle, withTiming, withSpring,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
@@ -14,6 +14,68 @@ import { AnimatedButton } from '../../../src/components/AnimatedButton';
 import { useTheme, spacing, typography, radius, shadows } from '../../../src/theme';
 import { getScan, sendChatMessage } from '../../../src/services/api';
 import { Message } from '../../../src/types';
+
+function SummaryCard({
+  docType,
+  summaryText,
+  keyPoints,
+  flagList,
+}: {
+  docType: string;
+  summaryText: string;
+  keyPoints: string[];
+  flagList: string[];
+}) {
+  const { colors } = useTheme();
+
+  return (
+    <View
+      style={[styles.summaryCard, { backgroundColor: colors.surface, ...shadows.card }]}
+    >
+      <View style={[styles.typeBadge, { backgroundColor: colors.primary + '18' }]}>
+        <Text style={[typography.caption, { color: colors.primary, textTransform: 'capitalize', fontFamily: 'Inter_600SemiBold' }]}>
+          {docType || 'document'}
+        </Text>
+      </View>
+
+      <Text style={[typography.body, { color: colors.textPrimary, marginTop: spacing.sm, lineHeight: 22 }]}>
+        {summaryText}
+      </Text>
+
+      {keyPoints.length > 0 && (
+        <>
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+          <Text style={[typography.caption, { color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', letterSpacing: 0.5, marginBottom: spacing.xs }]}>
+            KEY POINTS
+          </Text>
+          {keyPoints.map((point, i) => (
+            <View key={i} style={styles.pointRow}>
+              <View style={[styles.dot, { backgroundColor: colors.primary }]} />
+              <Text style={[typography.body, { color: colors.textPrimary, flex: 1 }]}>{point}</Text>
+            </View>
+          ))}
+        </>
+      )}
+
+      {flagList.length > 0 && (
+        <>
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+          {flagList.map((flag, i) => (
+            <View key={i} style={styles.flagRow}>
+              <Ionicons name="warning-outline" size={14} color={colors.error} />
+              <Text style={[typography.body, { color: colors.error, flex: 1, marginLeft: spacing.xs }]}>{flag}</Text>
+            </View>
+          ))}
+        </>
+      )}
+
+      <View style={[styles.divider, { backgroundColor: colors.border }]} />
+      <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center' }]}>
+        Ask anything about this document below
+      </Text>
+    </View>
+  );
+}
 
 export default function ResultScreen() {
   const { colors } = useTheme();
@@ -127,55 +189,6 @@ export default function ResultScreen() {
     ? docType.charAt(0).toUpperCase() + docType.slice(1)
     : 'Document';
 
-  const SummaryCard = () => (
-    <Animated.View
-      entering={FadeInDown.duration(400)}
-      style={[styles.summaryCard, { backgroundColor: colors.surface, ...shadows.card }]}
-    >
-      <View style={[styles.typeBadge, { backgroundColor: colors.primary + '18' }]}>
-        <Text style={[typography.caption, { color: colors.primary, textTransform: 'capitalize', fontFamily: 'Inter_600SemiBold' }]}>
-          {docType || 'document'}
-        </Text>
-      </View>
-
-      <Text style={[typography.body, { color: colors.textPrimary, marginTop: spacing.sm, lineHeight: 22 }]}>
-        {summaryText}
-      </Text>
-
-      {keyPoints.length > 0 && (
-        <>
-          <View style={[styles.divider, { backgroundColor: colors.border }]} />
-          <Text style={[typography.caption, { color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', letterSpacing: 0.5, marginBottom: spacing.xs }]}>
-            KEY POINTS
-          </Text>
-          {keyPoints.map((point, i) => (
-            <View key={i} style={styles.pointRow}>
-              <View style={[styles.dot, { backgroundColor: colors.primary }]} />
-              <Text style={[typography.body, { color: colors.textPrimary, flex: 1 }]}>{point}</Text>
-            </View>
-          ))}
-        </>
-      )}
-
-      {flagList.length > 0 && (
-        <>
-          <View style={[styles.divider, { backgroundColor: colors.border }]} />
-          {flagList.map((flag, i) => (
-            <View key={i} style={styles.flagRow}>
-              <Ionicons name="warning-outline" size={14} color={colors.error} />
-              <Text style={[typography.body, { color: colors.error, flex: 1, marginLeft: spacing.xs }]}>{flag}</Text>
-            </View>
-          ))}
-        </>
-      )}
-
-      <View style={[styles.divider, { backgroundColor: colors.border }]} />
-      <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center' }]}>
-        Ask anything about this document below
-      </Text>
-    </Animated.View>
-  );
-
   return (
     <KeyboardAvoidingView
       style={[styles.flex, { backgroundColor: colors.background }]}
@@ -183,8 +196,7 @@ export default function ResultScreen() {
       keyboardVerticalOffset={0}
     >
       {/* Header */}
-      <Animated.View
-        entering={FadeIn.duration(250)}
+      <View
         style={[styles.header, { paddingTop: insets.top + spacing.sm, backgroundColor: colors.surface, borderBottomColor: colors.border }]}
       >
         <AnimatedButton onPress={() => router.push('/(app)')} style={styles.backBtn}>
@@ -193,7 +205,7 @@ export default function ResultScreen() {
         <Text style={[typography.subheading, { color: colors.textPrimary, fontFamily: 'Inter_700Bold', flex: 1 }]} numberOfLines={1}>
           {title || `${docLabel} Analysis`}
         </Text>
-      </Animated.View>
+      </View>
 
       {/* Chat list */}
       <View style={styles.flex}>
@@ -206,7 +218,14 @@ export default function ResultScreen() {
             seenMessageIds.current.add(item.id);
             return <MessageBubble message={item} index={index} animate={animate} />;
           }}
-          ListHeaderComponent={<SummaryCard />}
+          ListHeaderComponent={
+            <SummaryCard
+              docType={docType}
+              summaryText={summaryText}
+              keyPoints={keyPoints}
+              flagList={flagList}
+            />
+          }
           ListFooterComponent={sending ? <TypingIndicator /> : null}
           contentContainerStyle={{ paddingBottom: spacing.lg }}
           keyboardShouldPersistTaps="handled"

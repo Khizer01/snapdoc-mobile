@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  View, Text, TextInput, StyleSheet, Alert, ScrollView, Pressable, Image, Platform, ActivityIndicator,
+  View, Text, TextInput, StyleSheet, Alert, ScrollView, Pressable, Image, Platform, ActivityIndicator, Keyboard,
 } from 'react-native';
 import Animated, {
   FadeInDown, FadeIn, FadeOut, SlideInDown, SlideOutDown,
@@ -94,11 +94,13 @@ export default function ProfileScreen() {
   const { user, signOut } = useAuth();
   const initFromUser = useProfileStore(state => state.initFromUser);
   const setProfile = useProfileStore(state => state.setProfile);
+  const resetProfile = useProfileStore(state => state.reset);
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [avatarUri, setAvatarUri] = useState<string | undefined>();
   const [saving, setSaving] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [showPhotoSheet, setShowPhotoSheet] = useState(false);
   const [showAvatarViewer, setShowAvatarViewer] = useState(false);
@@ -179,7 +181,8 @@ export default function ProfileScreen() {
     setUploadingAvatar(true);
     try {
       const filePath = `${user.id}/avatar.jpg`;
-      await supabase.storage.from('avatars').remove([filePath]);
+      const { error: removeError } = await supabase.storage.from('avatars').remove([filePath]);
+      if (removeError) throw removeError;
       await updateProfile({ first_name: firstName, last_name: lastName, avatar_url: undefined });
       setAvatarUri(undefined);
       setProfile({ avatarUrl: undefined });
@@ -192,6 +195,7 @@ export default function ProfileScreen() {
   }
 
   async function handleSave() {
+    Keyboard.dismiss();
     if (!firstName.trim() || !lastName.trim()) {
       Alert.alert('Error', 'First and last name are required');
       return;
@@ -215,6 +219,18 @@ export default function ProfileScreen() {
       Alert.alert('Error', err.message ?? 'Could not save profile');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleSignOut() {
+    Keyboard.dismiss();
+    setSigningOut(true);
+    try {
+      await signOut();
+      resetProfile();
+    } catch (err: any) {
+      setSigningOut(false);
+      Alert.alert('Error', err.message ?? 'Could not sign out');
     }
   }
 
@@ -303,11 +319,18 @@ export default function ProfileScreen() {
           </AnimatedButton>
 
           <AnimatedButton
-            onPress={signOut}
+            onPress={handleSignOut}
+            disabled={signingOut}
             style={[styles.signOutButton, { borderColor: colors.border }]}
           >
-            <Text style={[styles.signOutText, { color: colors.error }]}>Sign Out</Text>
-            <Ionicons name="exit-outline" size={18} color={colors.error} style={{ marginLeft: spacing.xs }} />
+            {signingOut ? (
+              <ActivityIndicator size="small" color={colors.error} />
+            ) : (
+              <>
+                <Text style={[styles.signOutText, { color: colors.error }]}>Sign Out</Text>
+                <Ionicons name="exit-outline" size={18} color={colors.error} style={{ marginLeft: spacing.xs }} />
+              </>
+            )}
           </AnimatedButton>
         </Animated.View>
 

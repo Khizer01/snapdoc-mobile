@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { AnimatedButton } from '../../src/components/AnimatedButton';
+import { CropOverlay } from '../../src/components/CropOverlay';
 import { Logo } from '../../src/components/Logo';
 import { useTheme, spacing, typography, radius } from '../../src/theme';
 import { explainDocument } from '../../src/services/api';
@@ -63,8 +64,9 @@ export default function CameraScreen() {
   const cameraRef = useRef<CameraView>(null);
   const [permission, requestPermission] = useCameraPermissions();
   const [processing, setProcessing] = useState(false);
-  const [pickedUri, setPickedUri] = useState<string | null>(null);
-  const [processingUri, setProcessingUri] = useState<string | null>(null);
+  const [previewUri, setPreviewUri] = useState<string | null>(null);
+  const [previewSource, setPreviewSource] = useState<'camera' | 'gallery' | null>(null);
+  const [showCrop, setShowCrop] = useState(false);
 
   if (!permission) return <View style={{ flex: 1, backgroundColor: colors.background }} />;
 
@@ -107,7 +109,8 @@ export default function CameraScreen() {
     } catch (err: any) {
       Alert.alert('Error', err.message ?? 'Failed to process document');
       setProcessing(false);
-      setProcessingUri(null);
+      // previewUri/previewSource intentionally retained so the user returns to the
+      // preview overlay (Retake/Crop/Analyze) to retry instead of losing the image.
     }
   }
 
@@ -115,8 +118,8 @@ export default function CameraScreen() {
     if (!cameraRef.current || processing) return;
     const photo = await cameraRef.current.takePictureAsync({ quality: 0.8 });
     if (!photo) throw new Error('Camera capture failed');
-    setProcessingUri(photo.uri);
-    await processAndNavigate(photo.uri);
+    setPreviewUri(photo.uri);
+    setPreviewSource('camera');
   }
 
   async function pickFromGallery() {
@@ -132,7 +135,8 @@ export default function CameraScreen() {
       base64: false,
     });
     if (result.canceled || !result.assets[0]) return;
-    setPickedUri(result.assets[0].uri);
+    setPreviewUri(result.assets[0].uri);
+    setPreviewSource('gallery');
   }
 
   return (
@@ -164,32 +168,54 @@ export default function CameraScreen() {
         </AnimatedButton>
       </View>
 
-      {/* Gallery preview */}
-      {pickedUri && !processing && (
+      {/* Capture/pick preview */}
+      {previewUri && !processing && (
         <View style={styles.previewOverlay}>
-          <Image source={{ uri: pickedUri }} style={styles.previewImage} resizeMode="contain" />
+          <Image source={{ uri: previewUri }} style={styles.previewImage} resizeMode="contain" />
           <View style={[styles.previewActions, { paddingBottom: insets.bottom + spacing.lg }]}>
             <AnimatedButton
-              onPress={() => setPickedUri(null)}
+              onPress={() => {
+                setPreviewUri(null);
+                setPreviewSource(null);
+                if (previewSource === 'gallery') {
+                  pickFromGallery();
+                }
+              }}
               style={[styles.previewBtn, { backgroundColor: 'rgba(0,0,0,0.6)' }]}
             >
-              <Ionicons name="refresh-outline" size={18} color="#fff" />
-              <Text style={[typography.label, { color: '#fff', marginLeft: 6 }]}>Choose Different</Text>
+              <Ionicons name={previewSource === 'gallery' ? 'images-outline' : 'refresh-outline'} size={18} color="#fff" />
+              <Text style={[typography.label, { color: '#fff', marginLeft: 6 }]}>
+                {previewSource === 'gallery' ? 'Choose Different' : 'Retake'}
+              </Text>
             </AnimatedButton>
             <AnimatedButton
-              onPress={() => {
-                const uri = pickedUri;
-                setProcessingUri(uri);
-                setPickedUri(null);
-                processAndNavigate(uri);
-              }}
+              onPress={() => setShowCrop(true)}
+              style={[styles.previewBtn, { backgroundColor: 'rgba(0,0,0,0.6)' }]}
+            >
+              <Ionicons name="crop-outline" size={18} color="#fff" />
+              <Text style={[typography.label, { color: '#fff', marginLeft: 6 }]}>Crop</Text>
+            </AnimatedButton>
+            <AnimatedButton
+              onPress={() => processAndNavigate(previewUri)}
               style={[styles.previewBtn, { backgroundColor: colors.primary }]}
             >
               <Ionicons name="scan-outline" size={18} color="#fff" />
-              <Text style={[typography.label, { color: '#fff', marginLeft: 6 }]}>Analyse Document</Text>
+              <Text style={[typography.label, { color: '#fff', marginLeft: 6 }]}>Analyze</Text>
             </AnimatedButton>
           </View>
         </View>
+      )}
+
+      {/* Crop overlay */}
+      {showCrop && previewUri && (
+        <CropOverlay
+          uri={previewUri}
+          onCancel={() => setShowCrop(false)}
+          onConfirm={(croppedUri) => {
+            setPreviewUri(croppedUri);
+            setShowCrop(false);
+          }}
+        />
       )}
 
       {/* Scanning animation overlay */}
