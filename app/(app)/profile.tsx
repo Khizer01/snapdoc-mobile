@@ -11,9 +11,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/hooks/useAuth';
 import { AnimatedButton } from '../../src/components/AnimatedButton';
+import { AvatarViewerModal } from '../../src/components/AvatarViewerModal';
 import { useTheme, spacing, typography, radius, shadows } from '../../src/theme';
 import { updateProfile } from '../../src/services/api';
 import { supabase } from '../../src/services/supabase';
+import { useProfileStore } from '../../src/store/useProfileStore';
 
 interface PhotoSheetProps {
   hasPhoto: boolean;
@@ -78,10 +80,20 @@ function PhotoPickerSheet({ hasPhoto, onUpload, onRemove, onDismiss, insetBottom
   );
 }
 
+function getInitials(firstName: string, lastName: string): string {
+  return [firstName[0] ?? '', lastName[0] ?? ''].join('').toUpperCase() || '?';
+}
+
+function getDisplayName(firstName: string, lastName: string): string {
+  return [firstName, lastName].filter(Boolean).join(' ') || 'Your Name';
+}
+
 export default function ProfileScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { user, signOut } = useAuth();
+  const initFromUser = useProfileStore(state => state.initFromUser);
+  const setProfile = useProfileStore(state => state.setProfile);
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -89,6 +101,7 @@ export default function ProfileScreen() {
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [showPhotoSheet, setShowPhotoSheet] = useState(false);
+  const [showAvatarViewer, setShowAvatarViewer] = useState(false);
   const [firstNameFocused, setFirstNameFocused] = useState(false);
   const [lastNameFocused, setLastNameFocused] = useState(false);
   const [displayName, setDisplayName] = useState('Your Name');
@@ -101,13 +114,17 @@ export default function ProfileScreen() {
     initialized.current = true;
     const fn = (user.user_metadata?.first_name as string) ?? '';
     const ln = (user.user_metadata?.last_name as string) ?? '';
+    const dn = getDisplayName(fn, ln);
+    const av = (user.user_metadata?.avatar_url as string) ?? undefined;
+    const ini = getInitials(fn, ln);
     setFirstName(fn);
     setLastName(ln);
-    setDisplayName([fn, ln].filter(Boolean).join(' ') || 'Your Name');
-    setAvatarUri((user.user_metadata?.avatar_url as string) ?? undefined);
+    setDisplayName(dn);
+    setAvatarUri(av);
+    initFromUser({ displayName: dn, avatarUrl: av, initials: ini });
   }, [user]);
 
-  const initials = [firstName[0] ?? '', lastName[0] ?? ''].join('').toUpperCase() || '?';
+  const initials = getInitials(firstName, lastName);
   const email = user?.email ?? '';
 
   async function handleUploadPhoto() {
@@ -147,6 +164,7 @@ export default function ProfileScreen() {
       const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`;
       await updateProfile({ first_name: firstName, last_name: lastName, avatar_url: publicUrl });
       setAvatarUri(publicUrl);
+      setProfile({ avatarUrl: publicUrl });
       await supabase.auth.refreshSession();
     } catch (err: any) {
       Alert.alert('Upload failed', err.message ?? 'Could not upload avatar');
@@ -164,6 +182,7 @@ export default function ProfileScreen() {
       await supabase.storage.from('avatars').remove([filePath]);
       await updateProfile({ first_name: firstName, last_name: lastName, avatar_url: undefined });
       setAvatarUri(undefined);
+      setProfile({ avatarUrl: undefined });
       await supabase.auth.refreshSession();
     } catch (err: any) {
       Alert.alert('Error', err.message ?? 'Could not remove photo');
@@ -185,7 +204,10 @@ export default function ProfileScreen() {
         avatar_url: avatarUri,
       });
       await supabase.auth.refreshSession();
-      setDisplayName([firstName.trim(), lastName.trim()].filter(Boolean).join(' ') || 'Your Name');
+      const newDisplayName = getDisplayName(firstName.trim(), lastName.trim());
+      const newInitials = getInitials(firstName.trim(), lastName.trim());
+      setDisplayName(newDisplayName);
+      setProfile({ displayName: newDisplayName, initials: newInitials });
       setSaved(true);
       if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
       savedTimerRef.current = setTimeout(() => setSaved(false), 2000);
@@ -207,6 +229,7 @@ export default function ProfileScreen() {
         <Animated.View entering={FadeInDown.duration(350)} style={styles.avatarSection}>
           <Pressable
             onPress={() => !uploadingAvatar && !saving && setShowPhotoSheet(true)}
+            onLongPress={() => avatarUri && setShowAvatarViewer(true)}
             style={[styles.avatarRing, { borderColor: colors.primary + '40' }]}
           >
             <View style={[styles.avatarCircle, { backgroundColor: colors.primary + '18' }]}>
@@ -306,6 +329,10 @@ export default function ProfileScreen() {
           insetBottom={insets.bottom}
           colors={colors}
         />
+      )}
+
+      {showAvatarViewer && avatarUri && (
+        <AvatarViewerModal uri={avatarUri} onClose={() => setShowAvatarViewer(false)} />
       )}
     </View>
   );

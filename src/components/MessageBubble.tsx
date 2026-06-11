@@ -7,15 +7,16 @@ import { Message } from '../types';
 interface MessageBubbleProps {
   message: Message;
   index: number;
+  animate: boolean;
 }
 
-export function MessageBubble({ message, index }: MessageBubbleProps) {
+export function MessageBubble({ message, index, animate }: MessageBubbleProps) {
   const { colors } = useTheme();
   const isUser = message.role === 'user';
 
   return (
     <Animated.View
-      entering={FadeInDown.duration(250).delay(Math.min(index * 40, 200))}
+      entering={animate ? FadeInDown.duration(250).delay(Math.min(index * 40, 200)) : undefined}
       style={[styles.row, isUser ? styles.rowRight : styles.rowLeft]}
     >
       <View style={[

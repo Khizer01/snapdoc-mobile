@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, TextInput, StyleSheet, Pressable,
-  KeyboardAvoidingView, Platform, ScrollView,
+  View, Text, TextInput, StyleSheet, Pressable, ScrollView,
 } from 'react-native';
 import Animated, {
   FadeIn, FadeInDown, FadeOutUp,
@@ -207,136 +206,131 @@ export default function AuthScreen() {
 
   return (
     <View style={[styles.flex, styles.outerBg]}>
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'android' ? 'height' : undefined}
+      <ScrollView
+        style={[styles.flex, { backgroundColor: colors.surface }]}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        automaticallyAdjustKeyboardInsets
+        bounces={false}
       >
-        <ScrollView
-          style={[styles.flex, { backgroundColor: colors.surface }]}
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-          automaticallyAdjustKeyboardInsets
-          bounces={false}
-        >
-          {/* Branding: gradient lives here so it never bleeds below the card */}
-          <View style={[styles.branding, { paddingTop: insets.top + spacing.xxl }]}>
-            <LinearGradient
-              colors={['#4A5BE8', '#7C3AED']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={StyleSheet.absoluteFill}
-            />
-            <Animated.View entering={FadeIn.duration(600)} style={styles.brandingContent}>
-              <AnimatedLogo />
-              <Text style={styles.appName}>SnapDoc AI</Text>
-              <Text style={styles.tagline}>Scan · Summarise · Ask anything</Text>
-            </Animated.View>
-          </View>
-
-          <Animated.View entering={FadeInDown.duration(450).delay(150)} style={styles.cardWrapper}>
-            <View style={[styles.card, { backgroundColor: colors.surface, paddingBottom: insets.bottom + spacing.xl }]}>
-              <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
-                {isSignUp ? 'Create your account' : 'Welcome back'}
-              </Text>
-
-              {/* First name */}
-              {isSignUp && (
-                <Animated.View entering={FadeInDown.duration(250)} exiting={FadeOutUp.duration(200)}>
-                  <TextInput
-                    style={inputStyle(firstNameFocused, !!errors.firstName)}
-                    placeholder="First Name"
-                    placeholderTextColor={colors.textSecondary}
-                    value={firstName}
-                    onChangeText={v => { setFirstName(v); clearFieldError('firstName'); }}
-                    autoCapitalize="words"
-                    onFocus={() => setFirstNameFocused(true)}
-                    onBlur={() => setFirstNameFocused(false)}
-                  />
-                  <FieldError text={errors.firstName} errorColor={colors.error} />
-                </Animated.View>
-              )}
-
-              {/* Last name */}
-              {isSignUp && (
-                <Animated.View
-                  entering={FadeInDown.duration(250).delay(60)}
-                  exiting={FadeOutUp.duration(200)}
-                  style={{ marginTop: errors.firstName ? spacing.xs : spacing.md }}
-                >
-                  <TextInput
-                    style={inputStyle(lastNameFocused, !!errors.lastName)}
-                    placeholder="Last Name"
-                    placeholderTextColor={colors.textSecondary}
-                    value={lastName}
-                    onChangeText={v => { setLastName(v); clearFieldError('lastName'); }}
-                    autoCapitalize="words"
-                    onFocus={() => setLastNameFocused(true)}
-                    onBlur={() => setLastNameFocused(false)}
-                  />
-                  <FieldError text={errors.lastName} errorColor={colors.error} />
-                </Animated.View>
-              )}
-
-              {/* Email */}
-              <View style={{ marginTop: isSignUp ? (errors.lastName ? spacing.xs : spacing.md) : 0 }}>
-                <TextInput
-                  style={inputStyle(emailFocused, !!errors.email)}
-                  placeholder="Email address"
-                  placeholderTextColor={colors.textSecondary}
-                  value={email}
-                  onChangeText={v => { setEmail(v); clearFieldError('email'); }}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  onFocus={() => setEmailFocused(true)}
-                  onBlur={() => setEmailFocused(false)}
-                />
-                <FieldError text={errors.email} errorColor={colors.error} />
-              </View>
-
-              {/* Password */}
-              <View style={{ marginTop: errors.email ? spacing.xs : spacing.md }}>
-                <TextInput
-                  style={[inputStyle(passwordFocused, !!errors.password), { paddingRight: 52 }]}
-                  placeholder="Password"
-                  placeholderTextColor={colors.textSecondary}
-                  value={password}
-                  onChangeText={v => { setPassword(v); clearFieldError('password'); }}
-                  secureTextEntry={!showPassword}
-                  onFocus={() => setPasswordFocused(true)}
-                  onBlur={() => setPasswordFocused(false)}
-                />
-                <Pressable onPress={togglePassword} hitSlop={12} style={styles.eyeBtn}>
-                  <Animated.View style={eyeAnimStyle}>
-                    <Ionicons
-                      name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                      size={22}
-                      color={colors.textSecondary}
-                    />
-                  </Animated.View>
-                </Pressable>
-                <FieldError text={errors.password} errorColor={colors.error} />
-              </View>
-
-              <AnimatedButton
-                onPress={handleSubmit}
-                disabled={loading}
-                style={[styles.submitButton, { marginTop: errors.password ? spacing.md : spacing.xl }]}
-              >
-                <Text style={styles.submitText}>
-                  {loading ? 'Please wait...' : isSignUp ? 'Create Account' : 'Sign In'}
-                </Text>
-              </AnimatedButton>
-
-              <AnimatedButton onPress={handleToggle} style={styles.toggle}>
-                <Text style={[typography.label, { color: colors.primary, fontSize: 15 }]}>
-                  {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
-                </Text>
-              </AnimatedButton>
-            </View>
+        {/* Branding: gradient lives here so it never bleeds below the card */}
+        <View style={[styles.branding, { paddingTop: insets.top + spacing.xxl }]}>
+          <LinearGradient
+            colors={['#4A5BE8', '#7C3AED']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
+          <Animated.View entering={FadeIn.duration(600)} style={styles.brandingContent}>
+            <AnimatedLogo />
+            <Text style={styles.appName}>SnapDoc AI</Text>
+            <Text style={styles.tagline}>Scan · Summarise · Ask anything</Text>
           </Animated.View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </View>
+
+        <Animated.View entering={FadeInDown.duration(450).delay(150)} style={styles.cardWrapper}>
+          <View style={[styles.card, { backgroundColor: colors.surface, paddingBottom: insets.bottom + spacing.xl }]}>
+            <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
+              {isSignUp ? 'Create your account' : 'Welcome back'}
+            </Text>
+
+            {/* First name */}
+            {isSignUp && (
+              <Animated.View entering={FadeInDown.duration(250)} exiting={FadeOutUp.duration(200)}>
+                <TextInput
+                  style={inputStyle(firstNameFocused, !!errors.firstName)}
+                  placeholder="First Name"
+                  placeholderTextColor={colors.textSecondary}
+                  value={firstName}
+                  onChangeText={v => { setFirstName(v); clearFieldError('firstName'); }}
+                  autoCapitalize="words"
+                  onFocus={() => setFirstNameFocused(true)}
+                  onBlur={() => setFirstNameFocused(false)}
+                />
+                <FieldError text={errors.firstName} errorColor={colors.error} />
+              </Animated.View>
+            )}
+
+            {/* Last name */}
+            {isSignUp && (
+              <Animated.View
+                entering={FadeInDown.duration(250).delay(60)}
+                exiting={FadeOutUp.duration(200)}
+                style={{ marginTop: errors.firstName ? spacing.xs : spacing.md }}
+              >
+                <TextInput
+                  style={inputStyle(lastNameFocused, !!errors.lastName)}
+                  placeholder="Last Name"
+                  placeholderTextColor={colors.textSecondary}
+                  value={lastName}
+                  onChangeText={v => { setLastName(v); clearFieldError('lastName'); }}
+                  autoCapitalize="words"
+                  onFocus={() => setLastNameFocused(true)}
+                  onBlur={() => setLastNameFocused(false)}
+                />
+                <FieldError text={errors.lastName} errorColor={colors.error} />
+              </Animated.View>
+            )}
+
+            {/* Email */}
+            <View style={{ marginTop: isSignUp ? (errors.lastName ? spacing.xs : spacing.md) : 0 }}>
+              <TextInput
+                style={inputStyle(emailFocused, !!errors.email)}
+                placeholder="Email address"
+                placeholderTextColor={colors.textSecondary}
+                value={email}
+                onChangeText={v => { setEmail(v); clearFieldError('email'); }}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                onFocus={() => setEmailFocused(true)}
+                onBlur={() => setEmailFocused(false)}
+              />
+              <FieldError text={errors.email} errorColor={colors.error} />
+            </View>
+
+            {/* Password */}
+            <View style={{ marginTop: errors.email ? spacing.xs : spacing.md }}>
+              <TextInput
+                style={[inputStyle(passwordFocused, !!errors.password), { paddingRight: 52 }]}
+                placeholder="Password"
+                placeholderTextColor={colors.textSecondary}
+                value={password}
+                onChangeText={v => { setPassword(v); clearFieldError('password'); }}
+                secureTextEntry={!showPassword}
+                onFocus={() => setPasswordFocused(true)}
+                onBlur={() => setPasswordFocused(false)}
+              />
+              <Pressable onPress={togglePassword} hitSlop={12} style={styles.eyeBtn}>
+                <Animated.View style={eyeAnimStyle}>
+                  <Ionicons
+                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                    size={22}
+                    color={colors.textSecondary}
+                  />
+                </Animated.View>
+              </Pressable>
+              <FieldError text={errors.password} errorColor={colors.error} />
+            </View>
+
+            <AnimatedButton
+              onPress={handleSubmit}
+              disabled={loading}
+              style={[styles.submitButton, { marginTop: errors.password ? spacing.md : spacing.xl }]}
+            >
+              <Text style={styles.submitText}>
+                {loading ? 'Please wait...' : isSignUp ? 'Create Account' : 'Sign In'}
+              </Text>
+            </AnimatedButton>
+
+            <AnimatedButton onPress={handleToggle} style={styles.toggle}>
+              <Text style={[typography.label, { color: colors.primary, fontSize: 15 }]}>
+                {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
+              </Text>
+            </AnimatedButton>
+          </View>
+        </Animated.View>
+      </ScrollView>
 
       <AlertModal config={alertConfig} onDismiss={() => setAlertConfig(null)} />
     </View>

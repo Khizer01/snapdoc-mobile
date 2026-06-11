@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, RefreshControl, Pressable, Image } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,6 +11,7 @@ import { StatsRow } from '../../src/components/StatsRow';
 import { Logo } from '../../src/components/Logo';
 import { AnimatedButton } from '../../src/components/AnimatedButton';
 import { useAuth } from '../../src/hooks/useAuth';
+import { useProfileStore } from '../../src/store/useProfileStore';
 import { useScans } from '../../src/hooks/useScans';
 import { useTheme, spacing, typography } from '../../src/theme';
 import { deleteScan, archiveScan } from '../../src/services/api';
@@ -33,11 +34,19 @@ export default function HomeScreen() {
     setPullRefreshing(false);
   }, [refresh]);
 
-  const initials = [
-    user?.user_metadata?.first_name?.[0] ?? '',
-    user?.user_metadata?.last_name?.[0] ?? '',
-  ].join('').toUpperCase() || '?';
-  const avatarUrl = user?.user_metadata?.avatar_url as string | undefined;
+  const initials = useProfileStore(state => state.initials);
+  const avatarUrl = useProfileStore(state => state.avatarUrl);
+  const initFromUser = useProfileStore(state => state.initFromUser);
+
+  useEffect(() => {
+    if (!user) return;
+    const fn = (user.user_metadata?.first_name as string) ?? '';
+    const ln = (user.user_metadata?.last_name as string) ?? '';
+    const dn = [fn, ln].filter(Boolean).join(' ') || 'Your Name';
+    const av = (user.user_metadata?.avatar_url as string) ?? undefined;
+    const ini = [fn[0] ?? '', ln[0] ?? ''].join('').toUpperCase() || '?';
+    initFromUser({ displayName: dn, avatarUrl: av, initials: ini });
+  }, [user, initFromUser]);
 
   function promptDelete(scanId: string) {
     setSelectedScan(null);
