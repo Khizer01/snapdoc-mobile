@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, TextInput, StyleSheet, FlatList,
-  KeyboardAvoidingView, Platform, Alert,
+  KeyboardAvoidingView, Platform, Alert, ActivityIndicator, Keyboard,
 } from 'react-native';
 import Animated, {
   useSharedValue, useAnimatedStyle, withTiming, withSpring,
@@ -96,6 +96,7 @@ export default function ResultScreen() {
   const summaryText = summary ?? '';
 
   const [messages, setMessages] = useState<Message[]>([]);
+  const [loadingMessages, setLoadingMessages] = useState(true);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
@@ -131,16 +132,20 @@ export default function ResultScreen() {
     listRef.current?.scrollToEnd({ animated });
   }
 
-  // Load messages on mount
+  // Load messages whenever the scan changes, resetting stale state first
   useEffect(() => {
     if (!scanId) return;
+    setMessages([]);
+    seenMessageIds.current = new Set();
+    setLoadingMessages(true);
     getScan(scanId)
       .then(({ messages: msgs }) => {
         setMessages(msgs);
         // After messages set, scroll to bottom on next frame
         setTimeout(() => scrollToBottom(false), 80);
       })
-      .catch(console.error);
+      .catch(console.error)
+      .finally(() => setLoadingMessages(false));
   }, [scanId]);
 
   // Scroll to bottom whenever the screen comes back into focus
@@ -154,6 +159,7 @@ export default function ResultScreen() {
     const userMessage = input.trim();
     setInput('');
     setSending(true);
+    Keyboard.dismiss();
 
     const optimisticMsg: Message = {
       id: Date.now().toString(),
@@ -209,54 +215,62 @@ export default function ResultScreen() {
 
       {/* Chat list */}
       <View style={styles.flex}>
-        <FlatList
-          ref={listRef}
-          data={messages}
-          keyExtractor={item => item.id}
-          renderItem={({ item, index }) => {
-            const animate = !seenMessageIds.current.has(item.id);
-            seenMessageIds.current.add(item.id);
-            return <MessageBubble message={item} index={index} animate={animate} />;
-          }}
-          ListHeaderComponent={
-            <SummaryCard
-              docType={docType}
-              summaryText={summaryText}
-              keyPoints={keyPoints}
-              flagList={flagList}
+        {loadingMessages ? (
+          <View style={[styles.flex, styles.center]}>
+            <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+        ) : (
+          <>
+            <FlatList
+              ref={listRef}
+              data={messages}
+              keyExtractor={item => item.id}
+              renderItem={({ item, index }) => {
+                const animate = !seenMessageIds.current.has(item.id);
+                seenMessageIds.current.add(item.id);
+                return <MessageBubble message={item} index={index} animate={animate} />;
+              }}
+              ListHeaderComponent={
+                <SummaryCard
+                  docType={docType}
+                  summaryText={summaryText}
+                  keyPoints={keyPoints}
+                  flagList={flagList}
+                />
+              }
+              ListFooterComponent={sending ? <TypingIndicator /> : null}
+              contentContainerStyle={{ paddingBottom: spacing.lg }}
+              keyboardShouldPersistTaps="handled"
+              scrollEventThrottle={16}
+              onLayout={e => { layoutHeightRef.current = e.nativeEvent.layout.height; }}
+              onContentSizeChange={(_, h) => {
+                contentHeightRef.current = h;
+                checkAtBottom(scrollYRef.current);
+              }}
+              onScroll={e => {
+                scrollYRef.current = e.nativeEvent.contentOffset.y;
+                checkAtBottom(scrollYRef.current);
+              }}
             />
-          }
-          ListFooterComponent={sending ? <TypingIndicator /> : null}
-          contentContainerStyle={{ paddingBottom: spacing.lg }}
-          keyboardShouldPersistTaps="handled"
-          scrollEventThrottle={16}
-          onLayout={e => { layoutHeightRef.current = e.nativeEvent.layout.height; }}
-          onContentSizeChange={(_, h) => {
-            contentHeightRef.current = h;
-            checkAtBottom(scrollYRef.current);
-          }}
-          onScroll={e => {
-            scrollYRef.current = e.nativeEvent.contentOffset.y;
-            checkAtBottom(scrollYRef.current);
-          }}
-        />
 
-        {/* Scroll-to-bottom button */}
-        <Animated.View
-          style={[
-            styles.scrollBtn,
-            { bottom: spacing.sm },
-            scrollBtnStyle,
-          ]}
-          pointerEvents={isAtBottom ? 'none' : 'auto'}
-        >
-          <AnimatedButton
-            onPress={() => scrollToBottom(true)}
-            style={[styles.scrollBtnInner, { backgroundColor: colors.surface, borderColor: colors.border }]}
-          >
-            <Ionicons name="chevron-down" size={20} color={colors.textPrimary} />
-          </AnimatedButton>
-        </Animated.View>
+            {/* Scroll-to-bottom button */}
+            <Animated.View
+              style={[
+                styles.scrollBtn,
+                { bottom: spacing.sm },
+                scrollBtnStyle,
+              ]}
+              pointerEvents={isAtBottom ? 'none' : 'auto'}
+            >
+              <AnimatedButton
+                onPress={() => scrollToBottom(true)}
+                style={[styles.scrollBtnInner, { backgroundColor: colors.surface, borderColor: colors.border }]}
+              >
+                <Ionicons name="chevron-down" size={20} color={colors.textPrimary} />
+              </AnimatedButton>
+            </Animated.View>
+          </>
+        )}
       </View>
 
       {/* Input bar */}
@@ -295,6 +309,7 @@ export default function ResultScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  center: { alignItems: 'center', justifyContent: 'center' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

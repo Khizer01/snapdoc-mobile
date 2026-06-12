@@ -35,7 +35,7 @@ export function ScanCard({ scan, onLongPress }: ScanCardProps) {
   const { colors } = useTheme();
   const router = useRouter();
 
-  const cardTitle = toTitleCase(scan.document_type);
+  const cardTitle = scan.title || toTitleCase(scan.document_type);
 
   const params = new URLSearchParams({
     title: cardTitle,
