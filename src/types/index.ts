@@ -4,6 +4,7 @@ export interface Scan {
   raw_text: string | null;
   ai_summary: string | null;
   document_type: string | null;
+  title: string | null;
   key_points: string[] | null;
   flags: string[] | null;
   created_at: string;
