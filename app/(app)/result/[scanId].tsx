@@ -81,13 +81,14 @@ export default function ResultScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { scanId, title, summary, document_type, key_points, flags } = useLocalSearchParams<{
+  const { scanId, title, summary, document_type, key_points, flags, from } = useLocalSearchParams<{
     scanId: string;
     title: string;
     summary: string;
     document_type: string;
     key_points: string;
     flags: string;
+    from?: string;
   }>();
 
   const keyPoints: string[] = (() => { try { return JSON.parse(key_points ?? '[]'); } catch { return []; } })();
@@ -205,7 +206,7 @@ export default function ResultScreen() {
       <View
         style={[styles.header, { paddingTop: insets.top + spacing.sm, backgroundColor: colors.surface, borderBottomColor: colors.border }]}
       >
-        <AnimatedButton onPress={() => (router.canGoBack() ? router.back() : router.push('/(app)'))} style={styles.backBtn}>
+        <AnimatedButton onPress={() => router.push(from === 'archived' ? '/(app)/archived' : '/(app)')} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
         </AnimatedButton>
         <Text style={[typography.subheading, { color: colors.textPrimary, fontFamily: 'Inter_700Bold', flex: 1 }]} numberOfLines={1}>

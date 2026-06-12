@@ -53,7 +53,7 @@ export function SwipeableCard({
       rightThreshold={40}
       overshootRight={false}
     >
-      <ScanCard scan={scan} onLongPress={onLongPress} />
+      <ScanCard scan={scan} onLongPress={onLongPress} from={mode === 'archived' ? 'archived' : 'home'} />
     </Swipeable>
   );
 }
