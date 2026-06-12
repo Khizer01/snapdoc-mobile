@@ -9,6 +9,7 @@ import { Scan } from '../types';
 interface ScanCardProps {
   scan: Scan;
   onLongPress?: () => void;
+  from?: 'home' | 'archived';
 }
 
 function formatDate(iso: string): string {
@@ -31,7 +32,7 @@ function accentColor(documentType: string | null): string {
   return '#5B6AF0';
 }
 
-export function ScanCard({ scan, onLongPress }: ScanCardProps) {
+export function ScanCard({ scan, onLongPress, from = 'home' }: ScanCardProps) {
   const { colors } = useTheme();
   const router = useRouter();
 
@@ -43,6 +44,7 @@ export function ScanCard({ scan, onLongPress }: ScanCardProps) {
     document_type: scan.document_type ?? '',
     key_points: JSON.stringify(scan.key_points ?? []),
     flags: JSON.stringify(scan.flags ?? []),
+    from,
   });
 
   const flagCount = scan.flags?.length ?? 0;
