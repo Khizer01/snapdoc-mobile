@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Image, Modal, Text, LayoutChangeEvent, Alert } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { useSharedValue, useAnimatedStyle } from 'react-native-reanimated';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { Ionicons } from '@expo/vector-icons';
@@ -160,11 +160,17 @@ export function CropOverlay({ uri, onCancel, onConfirm }: CropOverlayProps) {
     if (!bounds.width || !naturalSize.width) return;
     setProcessing(true);
     try {
-      const scale = naturalSize.width / bounds.width;
-      const originX = Math.round((cropX.value - bounds.offsetX) * scale);
-      const originY = Math.round((cropY.value - bounds.offsetY) * scale);
-      const width = Math.round(cropW.value * scale);
-      const height = Math.round(cropH.value * scale);
+      const scaleX = naturalSize.width / bounds.width;
+      const scaleY = naturalSize.height / bounds.height;
+      let originX = Math.round((cropX.value - bounds.offsetX) * scaleX);
+      let originY = Math.round((cropY.value - bounds.offsetY) * scaleY);
+      let width = Math.round(cropW.value * scaleX);
+      let height = Math.round(cropH.value * scaleY);
+
+      originX = Math.min(Math.max(originX, 0), naturalSize.width - 1);
+      originY = Math.min(Math.max(originY, 0), naturalSize.height - 1);
+      width = Math.min(width, naturalSize.width - originX);
+      height = Math.min(height, naturalSize.height - originY);
 
       const result = await ImageManipulator.manipulateAsync(
         uri,
@@ -182,6 +188,7 @@ export function CropOverlay({ uri, onCancel, onConfirm }: CropOverlayProps) {
 
   return (
     <Modal visible statusBarTranslucent animationType="fade">
+      <GestureHandlerRootView style={styles.container}>
       <View style={styles.container}>
         <View style={styles.imageArea} onLayout={onContainerLayout}>
           <Image source={{ uri }} style={StyleSheet.absoluteFill} resizeMode="contain" />
@@ -217,6 +224,7 @@ export function CropOverlay({ uri, onCancel, onConfirm }: CropOverlayProps) {
           </AnimatedButton>
         </View>
       </View>
+      </GestureHandlerRootView>
     </Modal>
   );
 }

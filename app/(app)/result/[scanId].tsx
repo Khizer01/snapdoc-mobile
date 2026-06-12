@@ -205,7 +205,7 @@ export default function ResultScreen() {
       <View
         style={[styles.header, { paddingTop: insets.top + spacing.sm, backgroundColor: colors.surface, borderBottomColor: colors.border }]}
       >
-        <AnimatedButton onPress={() => router.push('/(app)')} style={styles.backBtn}>
+        <AnimatedButton onPress={() => (router.canGoBack() ? router.back() : router.push('/(app)'))} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
         </AnimatedButton>
         <Text style={[typography.subheading, { color: colors.textPrimary, fontFamily: 'Inter_700Bold', flex: 1 }]} numberOfLines={1}>

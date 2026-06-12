@@ -279,6 +279,7 @@ export default function ProfileScreen() {
             ]}
             value={firstName}
             onChangeText={setFirstName}
+            editable={!saving}
             autoCapitalize="words"
             placeholder="First Name"
             placeholderTextColor={colors.textSecondary}
@@ -298,6 +299,7 @@ export default function ProfileScreen() {
             ]}
             value={lastName}
             onChangeText={setLastName}
+            editable={!saving}
             autoCapitalize="words"
             placeholder="Last Name"
             placeholderTextColor={colors.textSecondary}
