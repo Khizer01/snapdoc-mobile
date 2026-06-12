@@ -159,6 +159,7 @@ export default function ResultScreen() {
     const userMessage = input.trim();
     setInput('');
     setSending(true);
+    Keyboard.dismiss();
 
     const optimisticMsg: Message = {
       id: Date.now().toString(),
