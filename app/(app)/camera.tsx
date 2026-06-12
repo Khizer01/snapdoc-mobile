@@ -115,11 +115,27 @@ export default function CameraScreen() {
     }
   }
 
+  async function normalizeOrientation(uri: string) {
+    try {
+      const { width } = await new Promise<{ width: number; height: number }>((resolve, reject) => {
+        Image.getSize(uri, (w, h) => resolve({ width: w, height: h }), reject);
+      });
+      const targetWidth = Math.min(width, 2000);
+      const normalized = await ImageManipulator.manipulateAsync(uri, [{ resize: { width: targetWidth } }], {
+        compress: 1,
+        format: ImageManipulator.SaveFormat.JPEG,
+      });
+      return normalized.uri;
+    } catch {
+      return uri;
+    }
+  }
+
   async function takePicture() {
     if (!cameraRef.current || processing) return;
     const photo = await cameraRef.current.takePictureAsync({ quality: 0.8 });
     if (!photo) throw new Error('Camera capture failed');
-    setPreviewUri(photo.uri);
+    setPreviewUri(await normalizeOrientation(photo.uri));
     setPreviewSource('camera');
   }
 
@@ -136,7 +152,7 @@ export default function CameraScreen() {
       base64: false,
     });
     if (result.canceled || !result.assets[0]) return;
-    setPreviewUri(result.assets[0].uri);
+    setPreviewUri(await normalizeOrientation(result.assets[0].uri));
     setPreviewSource('gallery');
   }
 
