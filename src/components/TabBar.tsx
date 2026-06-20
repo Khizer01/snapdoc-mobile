@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, Pressable, StyleSheet, Keyboard, Platform } from 'react-native';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -55,10 +55,26 @@ export function TabBar({ state, navigation }: BottomTabBarProps) {
   const router = useRouter();
   const scanScale = useSharedValue(1);
   const scanAnimStyle = useAnimatedStyle(() => ({ transform: [{ scale: scanScale.value }] }));
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  // Android resizes the whole window when the keyboard opens (adjustResize),
+  // which drags this fixed tab bar up to float above the keyboard. iOS doesn't
+  // resize the window, so it isn't affected and is left alone.
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const showSub = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
+    const hideSub = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   const currentRouteName = state.routes[state.index]?.name;
   const isHome = currentRouteName === 'index';
   const isProfile = currentRouteName === 'profile';
+
+  if (keyboardVisible) return null;
 
   return (
     <View style={[
