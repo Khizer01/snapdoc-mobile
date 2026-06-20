@@ -107,6 +107,8 @@ export default function CameraScreen() {
       });
       router.replace(`/(app)/result/${result.scan_id}?${params.toString()}`);
       setProcessing(false);
+      setPreviewUri(null);
+      setPreviewSource(null);
     } catch (err: any) {
       Alert.alert('Error', err.message ?? 'Failed to process document');
       setProcessing(false);
