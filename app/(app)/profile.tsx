@@ -338,13 +338,6 @@ export default function ProfileScreen() {
 
       </ScrollView>
 
-      {/* Fixed credit footer */}
-      <View style={[styles.creditFooter, { borderTopColor: colors.border, paddingBottom: insets.bottom + spacing.xs }]}>
-        <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center' }]}>
-          SnapDoc AI · v1.0 · © 2026
-        </Text>
-      </View>
-
       {showPhotoSheet && (
         <PhotoPickerSheet
           hasPhoto={!!avatarUri}

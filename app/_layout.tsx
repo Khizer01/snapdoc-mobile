@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Stack, useRouter, useSegments, useRootNavigationState, SplashScreen } from 'expo-router';
+import { Stack, SplashScreen } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -20,9 +20,6 @@ export default function RootLayout() {
   const fontsReady = fontsLoaded || !!fontError;
 
   const { user, loading } = useAuth();
-  const router = useRouter();
-  const segments = useSegments();
-  const navigationState = useRootNavigationState();
 
   // Hard fallback: always hide the native splash within 10 seconds
   useEffect(() => {
@@ -37,24 +34,19 @@ export default function RootLayout() {
     SplashScreen.hideAsync().catch(() => {});
   }, [fontsReady, loading]);
 
-  useEffect(() => {
-    if (loading || !fontsReady || !navigationState?.key) return;
-
-    const inAuthGroup = segments[0] === '(auth)';
-
-    if (!user && !inAuthGroup) {
-      router.replace('/(auth)');
-    } else if (user && inAuthGroup) {
-      router.replace('/(app)');
-    }
-  }, [user, loading, fontsReady, segments, navigationState?.key]);
-
   if (!fontsReady || loading) return <AppSplash />;
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <StatusBar style="auto" />
-      <Stack screenOptions={{ headerShown: false }} />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Protected guard={!user}>
+          <Stack.Screen name="(auth)" />
+        </Stack.Protected>
+        <Stack.Protected guard={!!user}>
+          <Stack.Screen name="(app)" />
+        </Stack.Protected>
+      </Stack>
     </GestureHandlerRootView>
   );
 }

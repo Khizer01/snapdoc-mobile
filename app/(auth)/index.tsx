@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, TextInput, StyleSheet, Pressable, ScrollView,
+  View, Text, TextInput, StyleSheet, Pressable,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import Animated, {
   FadeIn, FadeInDown, FadeOutUp,
   useSharedValue, useAnimatedStyle,
@@ -206,12 +207,13 @@ export default function AuthScreen() {
 
   return (
     <View style={[styles.flex, styles.outerBg]}>
-      <ScrollView
+      <KeyboardAwareScrollView
         style={[styles.flex, { backgroundColor: colors.surface }]}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
-        automaticallyAdjustKeyboardInsets
+        enableOnAndroid
+        extraScrollHeight={spacing.xl}
         bounces={false}
       >
         {/* Branding: gradient lives here so it never bleeds below the card */}
@@ -330,7 +332,7 @@ export default function AuthScreen() {
             </AnimatedButton>
           </View>
         </Animated.View>
-      </ScrollView>
+      </KeyboardAwareScrollView>
 
       <AlertModal config={alertConfig} onDismiss={() => setAlertConfig(null)} />
     </View>
