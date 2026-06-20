@@ -103,6 +103,7 @@ export default function ResultScreen() {
   const [inputFocused, setInputFocused] = useState(false);
   const listRef = useRef<FlatList>(null);
   const seenMessageIds = useRef(new Set<string>());
+  const pendingScrollRef = useRef(false);
 
   // Scroll position tracking
   const layoutHeightRef = useRef(0);
@@ -169,8 +170,8 @@ export default function ResultScreen() {
       content: userMessage,
       created_at: new Date().toISOString(),
     };
+    pendingScrollRef.current = true;
     setMessages(prev => [...prev, optimisticMsg]);
-    setTimeout(() => scrollToBottom(true), 50);
 
     try {
       const history = messages.map(m => ({ role: m.role, content: m.content }));
@@ -182,8 +183,8 @@ export default function ResultScreen() {
         content: reply,
         created_at: new Date().toISOString(),
       };
+      pendingScrollRef.current = true;
       setMessages(prev => [...prev, assistantMsg]);
-      setTimeout(() => scrollToBottom(true), 80);
     } catch (err: any) {
       Alert.alert('Error', err.message ?? 'Failed to send message');
       setMessages(prev => prev.filter(m => m.id !== optimisticMsg.id));
@@ -199,7 +200,7 @@ export default function ResultScreen() {
   return (
     <KeyboardAvoidingView
       style={[styles.flex, { backgroundColor: colors.background }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={0}
     >
       {/* Header */}
@@ -246,7 +247,13 @@ export default function ResultScreen() {
               onLayout={e => { layoutHeightRef.current = e.nativeEvent.layout.height; }}
               onContentSizeChange={(_, h) => {
                 contentHeightRef.current = h;
-                checkAtBottom(scrollYRef.current);
+                if (pendingScrollRef.current) {
+                  pendingScrollRef.current = false;
+                  scrollToBottom(true);
+                  setIsAtBottom(true);
+                } else {
+                  checkAtBottom(scrollYRef.current);
+                }
               }}
               onScroll={e => {
                 scrollYRef.current = e.nativeEvent.contentOffset.y;
